@@ -23,7 +23,7 @@ function Demander-InformationsHote {
     # Instructions pour l'utilisateur
     Afficher-Message "`nÉtapes à suivre sur l'ordinateur Debian :" -Couleur Yellow
     Afficher-Message "1. Ouvrez le Terminal (Ctrl+Alt+T)" -Couleur White
-    Afficher-Message "2. Tapez les commandes suivantes :" -Couleur White
+    Afficher-Message "2. Tapez les commandes suivantes :" -Couleur Whit
     Afficher-Message "   - Pour l'adresse IP : " -Couleur Cyan
     Afficher-Message "     ip addr show" -Couleur Green
     Afficher-Message "   - Pour le nom d'utilisateur :" -Couleur Cyan  
@@ -316,8 +316,8 @@ function Test-PiNode {
 # Point d'entrée du script
 try {
     Afficher-Message "Script de Migration de node Pi Network" -Couleur Magenta
-    Afficher-Message "Version 1.0 - © [drehuwann](mailto:drehuwann@gmail.com) Octobre 2025" -Couleur DarkGray
-    
+    Afficher-Message "Version 1.0 - © drehuwann - https://github.com/drehuwann" -Couleur DarkGray
+    Afficher-Message "Contact : mailto:drehuwann@gmail.com" -Couleur DarkGray
     Executer-MigrationNodePi
 } catch {
     Afficher-Message "Une erreur inattendue s'est produite : $_" -Couleur Red
