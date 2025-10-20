@@ -102,7 +102,7 @@ Ce programme est un logiciel libre ; vous pouvez le redistribuer et/ou le modifi
 
 ### Prérequis Techniques Minimum
 - Ordinateur sous Linux/Debian
-- Connexion Réseau locale stable
+- Connexion Internet stable
 - 4 Go RAM recommandées
 - 50 Go d'espace disque
 
