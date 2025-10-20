@@ -1,90 +1,71 @@
 # Pi Node Migrator
 
 ## Description
-Script de migration de node Pi Network pour les systèmes Debian/Linux
+Script de migration de node Pi Network pour les systÃ¨mes Debian/Linux
 
-###Fonctionnalités
-- Migration automatisée de node Pi
-- Transfert sécurisé des configurations
+### FonctionnalitÃ©s
+- Migration automatisÃ©e de node Pi
+- Transfert sÃ©curisÃ© des configurations
 - Support pour environnements Debian/LXDE
 
-## Prérequis
+## PrÃ©requis
 
-### Système Windows
-- PowerShell 5.1 ou supérieur
-- Connexion SSH configurée
+### SystÃ¨me Windows
+- PowerShell 5.1 ou supÃ©rieur
+- Connexion client SSH configurÃ©e
 - Droits administrateur
+- Pi-node installÃ© et configurÃ©
 
-### Système Debian
+### SystÃ¨me Debian
 - Debian 10/11 
-- LXDE recommandé
-- Docker installé
-- Accès SSH
+- AccÃ¨s client/serveur SSH pour utilisateur ayant les droits root
 
-## Installation
+### DÃ©pendances
+- Normalement gÃ©rÃ©es par le script
 
-### Dépendances
-```bash
-sudo apt-get update
-sudo apt-get install -y \
-    ca-certificates \
-    curl \
-    gnupg \
-    docker.io \
-    docker-compose
-```
-##Configuration
-###Variables Requises
+## Utilisation
+### Allumer l'hote Debian:
+le script expliquera les manipulations Ã  faire dessus.
 
-    $AdresseIP : IP du node Debian
-    $Utilisateur : Utilisateur SSH
-    $MotDePasse : Mot de passe SSH
+### Sur l'hote Windows :
+- ouvrir une console powershell
+- recupÃ©rer ici le script pi-node-migrator.ps1
+- exÃ©cuter le script
 
-##Utilisation
+## RÃ©fÃ©rence Officielle
+[Pi Network Node Documentation](https://minepi.com/pi-blockchain/pi-node/linux/)
 
-```powershell
-.\pi-node-migrator.ps1
-```
-Référence Officielle
-
-    Pi Network Node Documentation
-
-##Licence
-
+## Licence
 GNU General Public License v3.0
 
-Copyright © 2025 drehuwann drehuwann@gmail.com
+Copyright Â© 2025 drehuwann drehuwann@gmail.com
 
-Ce programme est un logiciel libre ; vous pouvez le redistribuer et/ou le modifier selon les termes de la Licence Publique Générale GNU publiée par la Free Software Foundation.
-Avertissement pour Débutants
+Ce programme est un logiciel libre ; vous pouvez le redistribuer et/ou le modifier selon les termes de la Licence Publique GÃ©nÃ©rale GNU publiÃ©e par la Free Software Foundation.
 
-##Vous êtes nouveau avec Pi Network ?
+## Vous Ãªtes nouveau avec Pi Network ?
+### Qu'est-ce qu'un node Pi ?
+- Un ordinateur qui participe Ã  la validation des transactions
+- Contribue Ã  la sÃ©curitÃ© et Ã  la dÃ©centralisation du rÃ©seau
 
-    Qu'est-ce qu'un node Pi ?
-        Un ordinateur qui participe à la validation des transactions
-        Contribue à la sécurité et à la décentralisation du réseau
+### PrÃ©requis Techniques Minimum
+- Ordinateur sous Linux/Debian
+- Connexion Reseau locale stable
+- 4 Go RAM recommandÃ©es
+- 50 Go d'espace disque
 
-    Prérequis Techniques Minimum
-        Ordinateur sous Linux/Debian
-        Connexion Internet stable
-        4 Go RAM recommandées
-        50 Go d'espace disque
+### SÃ©curitÃ©
+- Utilisez toujours des mots de passe robustes
+- Mettez Ã  jour rÃ©guliÃ¨rement vos systÃ¨mes
+- Configurez un pare-feu
 
-    Sécurité
-        Utilisez toujours des mots de passe robustes
-        Mettez à jour régulièrement vos systèmes
-        Configurez un pare-feu
+### ConfidentialitÃ©
+- Ne partagez JAMAIS vos clÃ©s privÃ©es
+- Utilisez des connexions sÃ©curisÃ©es
+- VÃ©rifiez toujours les sources
 
-##Confidentialité
-
-    Ne partagez JAMAIS vos clés privées
-    Utilisez des connexions sécurisées
-    Vérifiez toujours les sources
-
-##Contribution
-
+## Contribution
 Les contributions sont les bienvenues !
 Merci de soumettre vos Pull Requests.
-Support
 
-En cas de problème, ouvrez un ticket GitHub ou contactez support@pi-network.org
+## Support
+En cas de problÃ¨me, ouvrez un ticket GitHub ou contactez support@pi-network.org
