@@ -6,7 +6,7 @@ Script de migration de node Pi Network pour les systèmes Debian/Linux
 ### Fonctionnalités
 - Migration automatisée de node Pi
 - Transfert sécurisé des configurations
-- Support pour environnements Debian/LXDE
+- Support pour environnements Debian
 
 ## Prérequis
 
@@ -29,6 +29,9 @@ Script de migration de node Pi Network pour les systèmes Debian/Linux
 Allumez votre machine Debian. Le script vous guidera pour effectuer les manipulations nécessaires sur cet hôte.
 
 ### Sur l'hôte Windows
+⚠️ Important : le noeud Pi sur Windows doit être **arrêté** avant de lancer la migration.  
+Cela évite tout conflit entre les deux environnements et garantit l’intégrité des données.
+
 1. **Ouvrir PowerShell en tant qu’administrateur**  
    - Cliquez sur le menu Démarrer  
    - Tapez `PowerShell`  
@@ -99,7 +102,7 @@ Ce programme est un logiciel libre ; vous pouvez le redistribuer et/ou le modifi
 
 ### Prérequis Techniques Minimum
 - Ordinateur sous Linux/Debian
-- Connexion Reseau locale stable
+- Connexion Réseau locale stable
 - 4 Go RAM recommandées
 - 50 Go d'espace disque
 
