@@ -24,16 +24,61 @@ Script de migration de node Pi Network pour les systèmes Debian/Linux
 - Normalement gérées par le script
 
 ## Utilisation
-### Allumer l'hote Debian:
-le script expliquera les manipulations à faire dessus.
+1. **Ouvrir PowerShell en tant qu’administrateur**  
+   - Cliquez sur le menu Démarrer  
+   - Tapez `PowerShell`  
+   - Faites un clic droit sur **Windows PowerShell** → sélectionnez **Exécuter en tant qu’administrateur**
 
-### Sur l'hote Windows :
-- ouvrir une console powershell
-- recupérer ici le script pi-node-migrator.ps1
-- exécuter le script
+2. **Télécharger le script PowerShell**  
+   - Accédez au dépôt GitHub :  
+     [pi-node-migrator.ps1](https://github.com/drehuwann/pi-node-migrator/blob/main/pi-node-migrator.ps1)  
+   - Cliquez sur **Raw**, puis faites un clic droit → **Enregistrer sous...**  
+   - Sauvegardez le fichier dans un dossier facile d’accès, par exemple `C:\PiNodeMigrator`
+
+3. **Naviguer jusqu’au dossier du script**  
+   Dans PowerShell, tapez :
+   ```powershell
+   cd "C:\PiNodeMigrator"
+   ```
+
+4. **Vérifier et modifier la stratégie d’exécution**  
+   PowerShell peut empêcher l’exécution de scripts pour des raisons de sécurité. Pour vérifier la stratégie actuelle :
+   ```powershell
+   Get-ExecutionPolicy
+   ```
+   Si la réponse est `Restricted`, cela signifie que **aucun script ne peut être exécuté**, même local.
+
+   👉 Dans ce cas, vous devez temporairement autoriser l’exécution des scripts signés ou locaux. Voici comment faire :
+   ```powershell
+   Set-ExecutionPolicy RemoteSigned -Scope Process
+   ```
+   - `RemoteSigned` : autorise les scripts locaux non signés, mais exige une signature pour les scripts téléchargés.
+   - `-Scope Process` : applique ce changement **uniquement à la session PowerShell en cours** (aucun impact permanent sur le système).
+
+   💡 Exemple complet :
+   ```powershell
+   Get-ExecutionPolicy
+   # Résultat : Restricted
+
+   Set-ExecutionPolicy RemoteSigned -Scope Process
+   # Confirmez avec "Y" si demandé
+
+   .\pi-node-migrator.ps1
+   ```
+
+5. **Exécuter le script**  
+   Lancez le script avec :
+   ```powershell
+   .\pi-node-migrator.ps1
+   ```
+
+### 📌 Remarques
+- Le script s'assure que votre hôte Debian est accessible via SSH.
+- Le script gère automatiquement les dépendances nécessaires.
+- Suivez les instructions affichées dans PowerShell pour compléter la migration.
 
 ## Référence Officielle
-[Pi Network Node Documentation](https://minepi.com/pi-blockchain/pi-node/linux/)
+[Pi Network Node Documentation](https://minepi.com/pi-blockchain/pi-node/linux/) a servi a réaliser ce script.
 
 ## Licence
 GNU General Public License v3.0
