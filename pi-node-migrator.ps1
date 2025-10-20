@@ -1,6 +1,6 @@
-# Script de Préparation de Migration de Node Pi Network
+# Script de PrÃ©paration de Migration de Node Pi Network
 
-# Fonction pour afficher un message en français avec mise en forme
+# Fonction pour afficher un message en franÃ§ais avec mise en forme
 function Afficher-Message {
     param(
         [string]$Message, 
@@ -18,10 +18,10 @@ function Demander-InformationsHote {
 
     Clear-Host
     Afficher-Message "=== Configuration du Node Pi Network ===" -Couleur Cyan
-    Afficher-Message "Guide de Récupération des Informations Réseau sur Debian (LXDE)" -Couleur Green
+    Afficher-Message "Guide de RÃ©cupÃ©ration des Informations RÃ©seau sur Debian (LXDE)" -Couleur Green
 
     # Instructions pour l'utilisateur
-    Afficher-Message "`nÉtapes à suivre sur l'ordinateur Debian :" -Couleur Yellow
+    Afficher-Message "`nÃ‰tapes Ã  suivre sur l'ordinateur Debian :" -Couleur Yellow
     Afficher-Message "1. Ouvrez le Terminal (Ctrl+Alt+T)" -Couleur White
     Afficher-Message "2. Tapez les commandes suivantes :" -Couleur White
     Afficher-Message "   - Pour l'adresse IP : " -Couleur Cyan
@@ -36,7 +36,7 @@ function Demander-InformationsHote {
             $global:hoteDebian.AdresseIP = $ip
             break
         } else {
-            Afficher-Message "Format d'adresse IP invalide. Réessayez." -Couleur Red
+            Afficher-Message "Format d'adresse IP invalide. RÃ©essayez." -Couleur Red
         }
     } while ($true)
 
@@ -54,7 +54,7 @@ function Demander-InformationsHote {
     $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($motDePasse)
     $global:hoteDebian.MotDePasse = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
 
-    # Vérification de la connexion SSH
+    # VÃ©rification de la connexion SSH
     return (Tester-ConnexionSSH)
 }
 
@@ -62,10 +62,10 @@ function Tester-ConnexionSSH {
     try {
         $result = ssh -o ConnectTimeout=5 "$($global:hoteDebian.Utilisateur)@$($global:hoteDebian.AdresseIP)" "echo CONNEXION_REUSSIE"
         if ($result -eq "CONNEXION_REUSSIE") {
-            Afficher-Message "Connexion SSH réussie !" -Couleur Green
+            Afficher-Message "Connexion SSH rÃ©ussie !" -Couleur Green
             return $true
         } else {
-            Afficher-Message "Échec de la connexion SSH. Vérifiez les identifiants et le réseau." -Couleur Red
+            Afficher-Message "Ã‰chec de la connexion SSH. VÃ©rifiez les identifiants et le rÃ©seau." -Couleur Red
             return $false
         }
     } catch {
@@ -76,12 +76,12 @@ function Tester-ConnexionSSH {
 function Rechercher-FichierConfiguration {
     $dossierMigration = Join-Path $env:USERPROFILE "PiNodeMigration"
 
-    # Créer le dossier de migration s'il n'existe pas
+    # CrÃ©er le dossier de migration s'il n'existe pas
     if (-not (Test-Path -Path $dossierMigration)) {
         New-Item -ItemType Directory -Path $dossierMigration | Out-Null
     }
 
-    # Modèles de recherche des fichiers de configuration
+    # ModÃ¨les de recherche des fichiers de configuration
     $modelesRecherche = @(
         "mainnet.env", 
         "stellar-core.cfg", 
@@ -114,14 +114,14 @@ function Rechercher-FichierConfiguration {
         }
     }
 
-    # Copier les fichiers trouvés dans le dossier de migration
+    # Copier les fichiers trouvÃ©s dans le dossier de migration
     foreach ($fichier in $fichiersTraouves) {
         $cheminDestination = Join-Path $dossierMigration $fichier.Name
         try {
             Copy-Item -Path $fichier.FullName -Destination $cheminDestination -Force
-            Afficher-Message "Copié : $($fichier.FullName) vers $cheminDestination" -Couleur Green
+            Afficher-Message "CopiÃ© : $($fichier.FullName) vers $cheminDestination" -Couleur Green
         } catch {
-            Afficher-Message "Échec de la copie de $($fichier.FullName)" -Couleur Red
+            Afficher-Message "Ã‰chec de la copie de $($fichier.FullName)" -Couleur Red
         }
     }
 
@@ -134,7 +134,7 @@ function Generer-ScriptPreparationDebian {
     $scriptContenu = @"
 #!/bin/bash
 
-# Script de Préparation du node Pi Network
+# Script de PrÃ©paration du node Pi Network
 set -e
 
 # Fonction de journalisation
@@ -142,34 +142,34 @@ log() {
     echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"
 }
 
-# Étape 1 : Mise à jour des packages et installation des prérequis
-log "Mise à jour des listes de packages APT"
+# Ã‰tape 1 : Mise Ã  jour des packages et installation des prÃ©requis
+log "Mise Ã  jour des listes de packages APT"
 sudo apt-get update 
 
-log "Installation des packages prérequis"
+log "Installation des packages prÃ©requis"
 sudo apt-get install -y ca-certificates curl gnupg 
 sudo apt-get install -y docker.io docker-compose
 
-# Étape 2 : Ajout du dépôt Pi Network
-log "Ajout de la clé GPG Pi Network"
+# Ã‰tape 2 : Ajout du dÃ©pÃ´t Pi Network
+log "Ajout de la clÃ© GPG Pi Network"
 sudo install -m 0755 -d /etc/apt/keyrings 
 curl -fsSL https://apt.minepi.com/repository.gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/pinetwork-archive-keyring.gpg 
 sudo chmod a+r /etc/apt/keyrings/pinetwork-archive-keyring.gpg 
 
-log "Ajout du dépôt APT Pi Network"
+log "Ajout du dÃ©pÃ´t APT Pi Network"
 echo 'deb [arch=amd64 signed-by=/etc/apt/keyrings/pinetwork-archive-keyring.gpg] https://apt.minepi.com stable main' | sudo tee /etc/apt/sources.list.d/pinetwork.list > /dev/null
 
-# Mise à jour de l'index des packages APT
+# Mise Ã  jour de l'index des packages APT
 sudo apt-get update
 
-# Étape 2 : Installation du package Pi Node
+# Ã‰tape 2 : Installation du package Pi Node
 log "Installation du package Pi Node"
 sudo apt-get install -y pi-node 
 
-# Vérification de l'installation
+# VÃ©rification de l'installation
 pi-node --version
 
-# Étape 3 : Préparation du répertoire de migration
+# Ã‰tape 3 : PrÃ©paration du rÃ©pertoire de migration
 mkdir -p ~/pi_migration
 chmod 700 ~/pi_migration
 cd ~/pi_migration
@@ -194,14 +194,14 @@ extraire_identifiants() {
             postgres_password=$(grep -E '^POSTGRES_PASSWORD=' "$fichier" | cut -d'=' -f2 | tr -d ' ')
             docker_volumes=$(grep -E 'volumes:' "$fichier" | cut -d':' -f2 | tr -d ' ')
 
-            # Arrêter si les identifiants sont trouvés
+            # ArrÃªter si les identifiants sont trouvÃ©s
             [[ -n "$node_seed" && -n "$postgres_password" ]] && break
         fi
     done
 
     # Validation et utilisation des identifiants
     if [[ -n "$node_seed" && -n "$postgres_password" ]]; then
-        log "Identifiants trouvés. Initialisation du node..."
+        log "Identifiants trouvÃ©s. Initialisation du node..."
         pi-node initialize \
             --pi-folder "$HOME/pi-node" \
             --docker-volumes "${docker_volumes:-./docker_volumes/mainnet}" \
@@ -214,70 +214,70 @@ extraire_identifiants() {
     fi
 }
 
-# Exécution principale
-log "Début de la préparation de migration du node Pi"
+# ExÃ©cution principale
+log "DÃ©but de la prÃ©paration de migration du node Pi"
 extraire_identifiants
 
 # Nettoyage final
 log "Nettoyage des fichiers temporaires"
 rm -rf ~/pi_migration/*
 
-log "Migration du node Pi terminée avec succès"
+log "Migration du node Pi terminÃ©e avec succÃ¨s"
 "@
 
-    # Chemin du script sur le système local
+    # Chemin du script sur le systÃ¨me local
     $cheminScriptLocal = Join-Path $dossierMigration "preparation_node_pi.sh"
     
     # Enregistrer le script
     $scriptContenu | Out-File -FilePath $cheminScriptLocal -Encoding UTF8
 
-    # Rendre le script exécutable
+    # Rendre le script exÃ©cutable
     & chmod +x $cheminScriptLocal
 
-    # Transférer le script via SCP
+    # TransfÃ©rer le script via SCP
     try {
         scp $cheminScriptLocal "$Utilisateur@$AdresseIP:~/preparation_node_pi.sh"
-        Afficher-Message "Script transféré avec succès sur l'hôte Debian" -Couleur Green
+        Afficher-Message "Script transfÃ©rÃ© avec succÃ¨s sur l'hÃ´te Debian" -Couleur Green
     } catch {
-        Afficher-Message "Échec du transfert du script" -Couleur Red
+        Afficher-Message "Ã‰chec du transfert du script" -Couleur Red
     }
 }
 
-# Fonction principale d'exécution
+# Fonction principale d'exÃ©cution
 function Executer-MigrationNodePi {
-    # Demander les informations de l'hôte
+    # Demander les informations de l'hÃ´te
     if (Demander-InformationsHote) {
         # Rechercher les fichiers de configuration
         $fichiersConfiguration = Rechercher-FichierConfiguration
 
-        # Générer et transférer le script de préparation
+        # GÃ©nÃ©rer et transfÃ©rer le script de prÃ©paration
         Generer-ScriptPreparationDebian -AdresseIP $global:hoteDebian.AdresseIP -Utilisateur $global:hoteDebian.Utilisateur
 
-        # Afficher un résumé
-        Afficher-Message "`nRésumé de la migration :" -Couleur Cyan
+        # Afficher un rÃ©sumÃ©
+        Afficher-Message "`nRÃ©sumÃ© de la migration :" -Couleur Cyan
         Afficher-Message "Adresse IP du node Debian : $($global:hoteDebian.AdresseIP)" -Couleur White
         Afficher-Message "Utilisateur SSH : $($global:hoteDebian.Utilisateur)" -Couleur White
-        Afficher-Message "Fichiers de configuration trouvés : $($fichiersConfiguration.Count)" -Couleur White
+        Afficher-Message "Fichiers de configuration trouvÃ©s : $($fichiersConfiguration.Count)" -Couleur White
 
-        # Demander confirmation avant l'exécution finale
-        $confirmation = Read-Host "Voulez-vous exécuter le script de migration sur le node Debian ? (O/N)"
+        # Demander confirmation avant l'exÃ©cution finale
+        $confirmation = Read-Host "Voulez-vous exÃ©cuter le script de migration sur le node Debian ? (O/N)"
         
         if ($confirmation -eq 'O' -or $confirmation -eq 'o') {
             try {
-                # Exécution du script sur l'hôte distant
+                # ExÃ©cution du script sur l'hÃ´te distant
                 $resultat = ssh "$($global:hoteDebian.Utilisateur)@$($global:hoteDebian.AdresseIP)" "bash ~/preparation_node_pi.sh"
                 
-                Afficher-Message "Migration du node Pi terminée avec succès" -Couleur Green
-                Afficher-Message "Détails de l'exécution :" -Couleur White
+                Afficher-Message "Migration du node Pi terminÃ©e avec succÃ¨s" -Couleur Green
+                Afficher-Message "DÃ©tails de l'exÃ©cution :" -Couleur White
                 Afficher-Message $resultat -Couleur Cyan
             } catch {
-                Afficher-Message "Erreur lors de l'exécution du script de migration : $_" -Couleur Red
+                Afficher-Message "Erreur lors de l'exÃ©cution du script de migration : $_" -Couleur Red
             }
         } else {
-            Afficher-Message "Migration annulée par l'utilisateur" -Couleur Yellow
+            Afficher-Message "Migration annulÃ©e par l'utilisateur" -Couleur Yellow
         }
     } else {
-        Afficher-Message "La connexion à l'hôte Debian a échoué. Veuillez vérifier les paramètres." -Couleur Red
+        Afficher-Message "La connexion Ã  l'hÃ´te Debian a Ã©chouÃ©. Veuillez vÃ©rifier les paramÃ¨tres." -Couleur Red
     }
 }
 
@@ -286,21 +286,21 @@ function Test-PiNode {
 
     $allOk = $true
 
-    # Vérifier que pi-node est accessible
+    # VÃ©rifier que pi-node est accessible
     & ssh "$sshUser@$sshTarget" "pi-node --help" | Out-Null
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "pi-node est installé et accessible."
+        Write-Host "pi-node est installÃ© et accessible."
     } else {
         Write-Warning "pi-node n'est pas disponible."
 	$allOk = $false
     }
 
-    # Vérifier l'état du conteneur mainnet
+    # VÃ©rifier l'Ã©tat du conteneur mainnet
     $dockerStatus = & ssh "$sshUser@$sshTarget" "docker ps --filter 'name=mainnet' --format '{{.Status}}'"
     if ($dockerStatus) {
-        Write-Host "Conteneur mainnet trouvé : $dockerStatus"
+        Write-Host "Conteneur mainnet trouvÃ© : $dockerStatus"
     } else {
-        Write-Warning "Conteneur mainnet introuvable ou arrêté."
+        Write-Warning "Conteneur mainnet introuvable ou arrÃªtÃ©."
 	$allOk = $false
     }
 
@@ -313,10 +313,10 @@ function Test-PiNode {
     return $allOk
 }
 
-# Point d'entrée du script
+# Point d'entrÃ©e du script
 try {
     Afficher-Message "Script de Migration de node Pi Network" -Couleur Magenta
-    Afficher-Message "Version 1.0 - ©drehuwann <https://mailto:drehuwann@gmail.com Octobre 2025" -Couleur DarkGray
+    Afficher-Message "Version 1.0 - Â© [drehuwann](mailto:drehuwann@gmail.com) Octobre 2025" -Couleur DarkGray
     
     Executer-MigrationNodePi
 } catch {
@@ -325,7 +325,7 @@ try {
     Afficher-Message "`nFin du processus de migration" -Couleur White
     $testResult = Test-PiNode
     if ($testResult) {
-        exit 0   # succès
+        exit 0   # succÃ¨s
     } else {
         exit 1   # erreur
     }
