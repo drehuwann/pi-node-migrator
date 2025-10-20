@@ -24,6 +24,11 @@ Script de migration de node Pi Network pour les systèmes Debian/Linux
 - Normalement gérées par le script
 
 ## Utilisation
+
+### Sur l'hôte Debian
+Allumez votre machine Debian. Le script vous guidera pour effectuer les manipulations nécessaires sur cet hôte.
+
+### Sur l'hôte Windows
 1. **Ouvrir PowerShell en tant qu’administrateur**  
    - Cliquez sur le menu Démarrer  
    - Tapez `PowerShell`  
