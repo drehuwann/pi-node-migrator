@@ -284,12 +284,15 @@ function Executer-MigrationNodePi {
 function Test-PiNode {
     Write-Host "=== Tests post-migration ==="
 
+    $allOk = $true
+
     # Vérifier que pi-node est accessible
     & ssh "$sshUser@$sshTarget" "pi-node --help" | Out-Null
     if ($LASTEXITCODE -eq 0) {
         Write-Host "pi-node est installé et accessible."
     } else {
         Write-Warning "pi-node n'est pas disponible."
+	$allOk = $false
     }
 
     # Vérifier l'état du conteneur mainnet
@@ -298,6 +301,7 @@ function Test-PiNode {
         Write-Host "Conteneur mainnet trouvé : $dockerStatus"
     } else {
         Write-Warning "Conteneur mainnet introuvable ou arrêté."
+	$allOk = $false
     }
 
     # Afficher quelques lignes de logs
@@ -306,6 +310,7 @@ function Test-PiNode {
     Write-Host $logs
 
     Write-Host "=== Fin des tests ==="
+    return $allOk
 }
 
 # Point d'entrée du script
@@ -318,6 +323,11 @@ try {
     Afficher-Message "Une erreur inattendue s'est produite : $_" -Couleur Red
 } finally {
     Afficher-Message "`nFin du processus de migration" -Couleur White
-    Test-PiNode
+    $testResult = Test-PiNode
+    if ($testResult) {
+        exit 0   # succès
+    } else {
+        exit 1   # erreur
+    }
 }
 
