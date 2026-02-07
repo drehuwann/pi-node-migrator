@@ -4,13 +4,12 @@ set -e
 ###############################################
 #  CONFIGURATION — URLs DES FICHIERS À FETCH  #
 ###############################################
-WIN_ISO_URL="https://software-download.microsoft.com/db/Win10_22H2_French_x64v1.iso"
 VIRTIO_URL="https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/latest-virtio/virtio-win.iso"
 
 ###############################################
 #  NOMS DES FICHIERS LOCAUX                   #
 ###############################################
-WIN_ISO="Win10_22H2_French_x64v1.iso"
+WIN_ISO="Win10.iso"
 # Cherche un fichier virtio-win*.iso dans le dossier courant
 VIRTIO_ISO=$(ls virtio-win*.iso 2>/dev/null | head -n 1)
 QCOW2="win10.qcow2"
@@ -19,6 +18,34 @@ OPTIMIZE_PS1="optimWin/optimWinQcow.ps1"
 BASENAME_OPTIMIZE=$(basename "$OPTIMIZE_PS1")
 FIX_OOBE="optimWin/fix-oobe.cmd"
 RUN_FIX_OOBE="optimWin/run-fix-oobe.cmd"
+
+####################################################
+#  test availability of <ARG> in path. exit if not #
+####################################################
+require_cmd() {
+    command -v "$1" >/dev/null 2>&1 || {
+        echo "Error: required command '$1' not found in PATH." >&2
+        exit 1
+    }
+}
+
+##################################################
+# check ovmf presence and put its path in stdout #
+##################################################
+detect_ovmf() {
+  for dir in \
+    /usr/share/OVMF \
+    /usr/share/edk2-ovmf \
+    /usr/share/edk2/ovmf \
+    /usr/share/qemu \
+  ; do
+        if [ -r "$dir/OVMF_CODE.fd" ] && [ -r "$dir/OVMF_VARS.fd" ]; then
+            echo "$dir"
+            return 0
+        fi
+    done
+    return 1
+}
 
 ###############################################
 #  FONCTION : CHECK + DOWNLOAD                #
@@ -30,8 +57,12 @@ fetch_if_missing() {
     if [[ -f "$file" ]]; then
         echo "[OK] $file présent"
     else
-        echo "[DL] Téléchargement de $file..."
-        wget -O "$file" "$url"
+        if [[ $file == $WIN_ISO ]]; then
+            get_win10_iso
+        else 
+            echo "[DL] Téléchargement de $file..."
+            wget -O "$file" "$url"
+        fi
     fi
 }
 
@@ -57,6 +88,36 @@ check_qcow2() {
         return 2
     fi
 }
+
+get_win10_iso() {
+    echo "=== Windows 10 ISO requis ==="
+    echo "Microsoft ne permet plus le téléchargement automatisé de Windows 10."
+    echo "Veuillez télécharger manuellement l'ISO Windows 10 22H2 (x64, FR) depuis une source officielle."
+    echo "Placez ensuite le fichier dans ce dossier sous le nom : Win10.iso"
+    exit 1
+}
+
+###############################################
+# ÉTAPE 0 — VERIFICATION DES DEPENDANCES      #
+###############################################
+require_cmd qemu-system-x86_64
+require_cmd qemu-img
+if ! command -v wget >/dev/null 2>&1 && ! command -v curl >/dev/null 2>&1; then
+    echo "Error: need either 'wget' or 'curl' for downloads." >&2
+    exit 1
+fi
+OVMF_DIR="$(detect_ovmf || true)"
+if [ -z "$OVMF_DIR" ]; then
+    echo "Error: could not find OVMF_CODE.fd and OVMF_VARS.fd in common locations." >&2
+    echo "Hint: install OVMF/edk2-ovmf (e.g. on Gentoo: emerge --ask sys-firmware/edk2-ovmf)." >&2
+    exit 1
+fi
+# Definitions issues de la verif dependances
+OVMF_CODE="$OVMF_DIR/OVMF_CODE.fd"
+if [[ ! -f OVMFVARS.fd ]]; then
+    OVMF_VARS="./OVMF_VARS.fd"
+    cp "$OVMF_DIR/OVMF_VARS.fd" "$OVMF_VARS"
+fi
 
 ###############################################
 #  ÉTAPE 1 — CHECK DES FICHIERS SOURCES       #
@@ -108,7 +169,7 @@ echo Vérifiez que l'ISO optimize.iso est bien monté.
 EOF
 
 ###############################################
-#  Vérification des fichiers pour optimize.iso
+#  Vérification fichiers pour optimize.iso    #
 ###############################################
 # Vérifie que run-fix-oobe.cmd existe
 if [[ ! -f "$RUN_FIX_OOBE" ]]; then
@@ -202,8 +263,8 @@ if [[ "$INSTALL_WINDOWS" -eq 1 ]]; then
         -m 2200 \
         -device virtio-balloon \
         -device virtio-scsi-pci,id=scsi0 \
-        -drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE.fd \
-        -drive if=pflash,format=raw,file=/usr/share/OVMF/OVMF_VARS.fd \
+        -drive if=pflash,format=raw,readonly=on,file="$OVMF_CODE" \
+        -drive if=pflash,format=raw,file="$OVMF_VARS" \
         -drive file="$QCOW2",if=none,id=drive0 \
         -device scsi-hd,drive=drive0,bus=scsi0.0 \
         -drive file="$WIN_ISO",media=cdrom \
@@ -286,8 +347,8 @@ qemu-system-x86_64 \
     -m 2200 \
     -device virtio-balloon \
     -device virtio-scsi-pci,id=scsi0 \
-    -drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE.fd \
-    -drive if=pflash,format=raw,file=/usr/share/OVMF/OVMF_VARS.fd \
+    -drive if=pflash,format=raw,readonly=on,file="$OVMF_CODE" \
+    -drive if=pflash,format=raw,file="$OVMF_VARS" \
     -drive file=win10.qcow2,if=none,id=drive0 \
     -device scsi-hd,drive=drive0,bus=scsi0.0 \
     -drive file="$OPTIMIZE_ISO",media=cdrom,if=none,id=cd1 \
@@ -331,8 +392,8 @@ qemu-system-x86_64 \
   -m 4G \
   -cpu host \
   -smp 4 \
-  -drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE.fd \
-  -drive if=pflash,format=raw,file=/usr/share/OVMF/OVMF_VARS.fd \
+  -drive if=pflash,format=raw,readonly=on,file="$OVMF_CODE" \
+  -drive if=pflash,format=raw,file="$OVMF_VARS" \
   -drive file="$QCOW2",if=virtio \
   -boot c \
   -nic user,model=virtio-net-pci \
