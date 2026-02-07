@@ -236,7 +236,7 @@ log "Migration du node Pi terminée avec succès"
 
     # Transférer le script via SCP
     try {
-        scp $cheminScriptLocal "$Utilisateur@$AdresseIP:~/preparation_node_pi.sh"
+        scp $cheminScriptLocal "$Utilisateur@${AdresseIP}:~/preparation_node_pi.sh"
         Afficher-Message "Script transféré avec succès sur l'hôte Debian" -Couleur Green
     } catch {
         Afficher-Message "Échec du transfert du script" -Couleur Red
