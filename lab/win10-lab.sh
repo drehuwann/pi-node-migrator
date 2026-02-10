@@ -11,7 +11,11 @@ VIRTIO_URL="https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/lat
 ###############################################
 WIN_ISO="Win10.iso"
 # Cherche un fichier virtio-win*.iso dans le dossier courant
-VIRTIO_ISO=$(ls virtio-win*.iso 2>/dev/null | head -n 1)
+VIRTIO_ISO=$(ls virtio-w*.iso 2>/dev/null | head -n 1)
+if [[ -z "$VIRTIO_ISO" ]]; then
+# Assigne un nom par defaut
+    VIRTIO_ISO="virtio-win.iso"
+fi
 QCOW2="win10.qcow2"
 OPTIMIZE_ISO="optimize.iso"
 OPTIMIZE_PS1="optimWin/optimWinQcow.ps1"
@@ -48,6 +52,47 @@ detect_ovmf() {
 }
 
 ###############################################
+#  FONCTION : CHECK si <ARG> ressemble à Win  #
+###############################################
+check_windows_installed() {
+    local disk="$1"
+    # Le disque doit exister
+    [ ! -f "$disk" ] && return 1
+    # Liste les partitions
+    local parts
+    parts=$(guestfish --ro -a "$disk" run : list-partitions 2>/dev/null)
+    local efi_part=""
+    local ntfs_part=""
+    # Détecte les partitions EFI et Windows
+    for p in $parts; do
+        local fs
+        fs=$(guestfish --ro -a "$disk" run : list-filesystems | grep "$p" | awk '{print $2}')
+        case "$fs" in
+            vfat|fat|fat32)
+                efi_part="$p"
+                ;;
+            ntfs)
+                ntfs_part="$p"
+                ;;
+        esac
+    done
+    # Si l'une manque → Windows n'est pas installé
+    [ -z "$efi_part" ] && return 1
+    [ -z "$ntfs_part" ] && return 1
+    # Vérifie le bootloader Microsoft dans l'EFI
+    if ! guestfish --ro -a "$disk" run : mount "$efi_part" / : is-file /EFI/Microsoft/Boot/bootmgfw.efi; then
+        return 1
+    fi
+
+    # Vérifie le dossier Windows dans la partition NTFS
+    if ! guestfish --ro -a "$disk" run : mount "$ntfs_part" / : is-dir /Windows/System32; then
+        return 1
+    fi
+
+    return 0
+}
+
+###############################################
 #  FONCTION : CHECK + DOWNLOAD                #
 ###############################################
 fetch_if_missing() {
@@ -75,17 +120,14 @@ fetch_if_missing() {
 #   2 = corrompu
 ###############################################
 check_qcow2() {
-    local file="win10.qcow2"
-    if [[ ! -f "$file" ]]; then
+    if ! check_windows_installed "$QCOW2"; then
         QCOW2_STATUS=1
-        return 1
-    fi
-    if qemu-img check "$file" >/dev/null 2>&1; then
-        QCOW2_STATUS=0
-        return 0
     else
-        QCOW2_STATUS=2
-        return 2
+        if qemu-img check "$QCOW2" >/dev/null 2>&1; then
+            QCOW2_STATUS=0
+        else
+            QCOW2_STATUS=2
+        fi
     fi
 }
 
@@ -223,7 +265,6 @@ echo " VÉRIFICATION DU DISQUE WINDOWS (win10.qcow2)"
 echo "===================================================="
 
 check_qcow2
-
 case $QCOW2_STATUS in
     0)
         echo "[OK] Windows déjà installé — skip installation"
@@ -256,23 +297,21 @@ if [[ "$INSTALL_WINDOWS" -eq 1 ]]; then
     echo "Appuie sur Entrée pour démarrer l'installation..."
     read
 
-    qemu-system-x86_64 \
-        -enable-kvm \
-        -cpu host \
-        -smp 1 \
-        -m 2200 \
-        -device virtio-balloon \
-        -device virtio-scsi-pci,id=scsi0 \
-        -drive if=pflash,format=raw,readonly=on,file="$OVMF_CODE" \
-        -drive if=pflash,format=raw,file="$OVMF_VARS" \
-        -drive file="$QCOW2",if=none,id=drive0 \
-        -device scsi-hd,drive=drive0,bus=scsi0.0 \
-        -drive file="$WIN_ISO",media=cdrom \
-        -drive file="$VIRTIO_ISO",media=cdrom \
-        $( [[ -f "$OPTIMIZE_ISO" ]] && echo "-drive file=$OPTIMIZE_ISO,media=cdrom" ) \
-        -netdev user,id=net0 \
-        -device virtio-net,netdev=net0 \
-        -display gtk,gl=off
+qemu-system-x86_64 \
+    -enable-kvm \
+    -cpu host \
+    -smp 1 \
+    -m 2200 \
+    -device virtio-balloon \
+    -device virtio-scsi-pci,id=scsi0 \
+    -drive if=pflash,format=raw,readonly=on,file="$OVMF_CODE" \
+    -drive if=pflash,format=raw,file="$OVMF_VARS" \
+    -drive file="$WIN_ISO",media=cdrom,if=none,id=cd_win \
+    -device scsi-cd,drive=cd_win,bus=scsi0.0 \
+    -drive file="$QCOW2",if=none,id=drive0 \
+    -device scsi-hd,drive=drive0,bus=scsi0.0 \
+    -drive file="$VIRTIO_ISO",media=cdrom,if=ide \
+    -display gtk,gl=off
 
     echo
     echo "===================================================="
@@ -287,7 +326,7 @@ if [[ "$INSTALL_WINDOWS" -eq 1 ]]; then
         echo "         Quelque chose s'est mal passé."
         exit 1
     fi
-    
+
     echo "[OK] Installation confirmée — démarrage de Windows..."
     echo "Tu peux maintenant passer à l'étape d'optimisation."
     echo "Appuie sur Entrée pour continuer..."

@@ -1,3 +1,4 @@
 private/
 lab/optimWin/*.cmd
 optimize.config.ps1
+.*/

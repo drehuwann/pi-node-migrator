@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<unattend xmlns="urn:schemas-microsoft-com:unattend"
+          xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <!-- ========================= -->
+  <!-- 1. WINDOWS PE             -->
+  <!-- ========================= -->
+  <settings pass="windowsPE">
+    <!-- Placeholders for locale -->
+    <component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <SetupUILanguage>
+        <UILanguage>__LOCALE__</UILanguage>
+      </SetupUILanguage>
+      <InputLocale>__KEYBOARD__</InputLocale>
+      <SystemLocale>__LOCALE__</SystemLocale>
+      <UILanguage>__LOCALE__</UILanguage>
+      <UserLocale>__LOCALE__</UserLocale>
+    </component>
+    <component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <InstallFrom>
+        <MetaData wcm:action="add">
+          <Key>/IMAGE/INDEX</Key>
+          <Value>1</Value>
+        </MetaData>
+      </InstallFrom>
+      <ImageInstall>
+        <OSImage>
+          <InstallTo>
+            <DiskID>0</DiskID>
+            <PartitionID>1</PartitionID>
+          </InstallTo>
+        </OSImage>
+      </ImageInstall>
+      <UserData>
+        <AcceptEula>true</AcceptEula>
+        <FullName>root</FullName>
+        <Organization>QEMU</Organization>
+      </UserData>
+    </component>
+  </settings>
+
+  <!-- ========================= -->
+  <!-- 2. SPECIALIZE             -->
+  <!-- ========================= -->
+  <settings pass="specialize">
+    <component name="Microsoft-Windows-International-Core" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <InputLocale>__KEYBOARD__</InputLocale>
+      <SystemLocale>__LOCALE__</SystemLocale>
+      <UILanguage>__LOCALE__</UILanguage>
+      <UserLocale>__LOCALE__</UserLocale>
+    </component>
+    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <TimeZone>GMT Standard Time</TimeZone>
+      <RegisteredOwner>root</RegisteredOwner>
+      <RegisteredOrganization>QEMU</RegisteredOrganization>
+    </component>
+  </settings>
+
+  <!-- ========================= -->
+  <!-- 3. OOBE / FIRSTBOOT       -->
+  <!-- ========================= -->
+  <settings pass="oobeSystem">
+    <component name="Microsoft-Windows-International-Core" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <InputLocale>__KEYBOARD__</InputLocale>
+      <SystemLocale>__LOCALE__</SystemLocale>
+      <UILanguage>__LOCALE__</UILanguage>
+      <UserLocale>__LOCALE__</UserLocale>
+    </component>
+    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <OOBE>
+        <HideEULAPage>true</HideEULAPage>
+        <HideOEMRegistrationScreen>true</HideOEMRegistrationScreen>
+        <HideOnlineAccountScreens>true</HideOnlineAccountScreens>
+        <HideWirelessSetupInOOBE>true</HideWirelessSetupInOOBE>
+        <NetworkLocation>Work</NetworkLocation>
+        <ProtectYourPC>3</ProtectYourPC>
+        <SkipMachineOOBE>true</SkipMachineOOBE>
+        <SkipUserOOBE>true</SkipUserOOBE>
+      </OOBE>
+
+      <UserAccounts>
+        <LocalAccounts>
+          <LocalAccount wcm:action="add" wcm:keyValue="root">
+            <Name>root</Name>
+            <Group>Administrators</Group>
+            <Password>
+              <Value>YWRtaW4=</Value>
+              <PlainText>false</PlainText>
+            </Password>
+          </LocalAccount>
+        </LocalAccounts>
+      </UserAccounts>
+      <AutoLogon>
+        <Enabled>true</Enabled>
+        <Username>root</Username>
+        <Password>
+          <Value>YWRtaW4=</Value>
+          <PlainText>false</PlainText>
+        </Password>
+      </AutoLogon>
+      <FirstLogonCommands>
+        <SynchronousCommand wcm:action="add" wcm:keyValue="1">
+          <CommandLine>powershell -ExecutionPolicy Bypass -File C:\FirstLogon.ps1</CommandLine>
+          <Description>Optimisation</Description>
+        </SynchronousCommand>
+      </FirstLogonCommands>
+    </component>
+  </settings>
+  <cpi:offlineImage cpi:source="wim://sources/install.wim#Windows" xmlns:cpi="urn:schemas-microsoft-com:cpi" />
+</unattend>

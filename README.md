@@ -1,3 +1,8 @@
+<details>
+<summary>🇫🇷 Français</summary>
+
+<!-- Ton contenu actuel en français -->
+
 # Pi Node Migrator
 
 ## Description
@@ -122,3 +127,13 @@ Merci de soumettre vos Pull Requests.
 
 ## Support
 En cas de problème, ouvrez un ticket GitHub ou contactez support@pi-network.org
+</details>
+
+---
+
+<details>
+<summary>🇬🇧 English</summary>
+
+<!-- Traduction anglaise du même contenu -->
+
+</details>
