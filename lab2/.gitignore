@@ -1,1 +1,4 @@
-hacks
+patches/*
+logs/panther/*
+logs/host/*
+
