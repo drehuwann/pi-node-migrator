@@ -149,7 +149,7 @@ d_mount() {
     printf '%s\n' "mount $dev $mntpt" > "$CMD_FIFO"
     local resp
     if ! read -r -t 2 resp < "$RESP_FIFO"; then
-        if ! kill -0 "$DAEMON_PID" 2>/dev/null; then
+        if ! kill -0 "$DAEMON_REAL_PID" 2>/dev/null; then
             echo "ERREUR: daemon mort pendant le montage de $dev"
         else
             echo "ERREUR: timeout en attendant la reponse du daemon pour $dev"
