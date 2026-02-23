@@ -1,4 +1,6 @@
 patches/*
 logs/panther/*
 logs/host/*
+iso_work/
+*patched.wim
 
