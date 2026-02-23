@@ -3,4 +3,5 @@ logs/panther/*
 logs/host/*
 iso_work/
 *patched.wim
+win*custom.iso
 
