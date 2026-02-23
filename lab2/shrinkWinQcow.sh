@@ -1,5 +1,6 @@
 #!/bin/bash
-# Trap global pour nettoyage
+# Traps globaux pour nettoyage
+trap 'cleanup_all' EXIT
 trap 'cleanup_all; exit 130' INT
 #Noms des fichiers produits. $CUSTOMISO est detruit apres usage.
 CUSTOMISO="win10-custom.iso"
@@ -70,41 +71,39 @@ start_daemon() {
         kill "$wrapper_pid" 2>/dev/null
         return 1
     fi
-    if ! kill -0 "$ready_pid" 2>/dev/null; then
+    if ! ps -p "$ready_pid" > /dev/null 2>&1; then
         echo "ERROR: daemon died immediately after READY (PID=$ready_pid)"
         kill "$wrapper_pid" 2>/dev/null
         return 1
     fi
     DAEMON_REAL_PID="$ready_pid"
+    DAEMON_WRAPPER_PID="$wrapper_pid"
     echo "Daemon pret (wrapper PID=$wrapper_pid, daemon PID=$DAEMON_REAL_PID)"
     return 0
 }
 stop_daemon() {
-    # Si le daemon n'a jamais été lancé
-    if [ -z "$DAEMON_REAL_PID" ]; then
+    if [ -z "$DAEMON_REAL_PID" ] || [ -z "$DAEMON_WRAPPER_PID" ]; then
         echo "No daemon PID recorded, nothing to stop."
         return 0
     fi
-    # Vérifier qu'il est encore vivant
-    if kill -0 "$DAEMON_REAL_PID" 2>/dev/null; then
-        echo "Stopping daemon (PID=$DAEMON_REAL_PID)"
-        # Demande propre d'arrêt
-        echo "quit" > "$CMD_FIFO" 2>/dev/null
-        # Laisse-lui 1 seconde pour se terminer
-        sleep 1
-        # S'il est encore vivant, on le tue
-        if kill -0 "$DAEMON_REAL_PID" 2>/dev/null; then
-            echo "Daemon still alive, killing..."
-            kill "$DAEMON_REAL_PID" 2>/dev/null
+    # Ask daemon to quit
+    echo "quit" >&3 2>/dev/null
+    # Wait up to 2 seconds for wrapper to exit
+    for i in {1..10}; do
+        if ! ps -p "$DAEMON_REAL_PID" > /dev/null 2>&1; then
+            break
         fi
-    else
-        echo "Daemon already dead."
+        sleep 0.2
+    done
+    # If wrapper still alive, kill it
+    if ps -p "$DAEMON_WRAPPER_PID" > /dev/null 2>&1; then
+        echo "Wrapper still alive, killing..."
+        sudo kill "$DAEMON_WRAPPER_PID"
     fi
-    # Nettoyage des FIFOs
     rm -f "$CMD_FIFO" "$RESP_FIFO"
-    unset DAEMON_REAL_PID
+    unset DAEMON_REAL_PID DAEMON_WRAPPER_PID
     echo "Daemon stopped and FIFOs removed."
-    return 0
+    exec 3>&- # fermer le FD à la toute fin 
 }
 ########################################################
 #  Make the daemon umount $1
@@ -119,7 +118,7 @@ d_umount() {
         return 0
     fi
     # Demander au daemon de demonter
-    echo "umount $mntpt" > "$CMD_FIFO"
+    echo "umount $mntpt" >&3
     # Lire la reponse
     local resp
     read -r resp < "$RESP_FIFO"
@@ -146,7 +145,7 @@ d_mount() {
         echo "ERREUR: $mntpt doit etre vide avant montage"
         return 1
     fi
-    printf '%s\n' "mount $dev $mntpt" > "$CMD_FIFO"
+    printf '%s\n' "mount $dev $mntpt" >&3
     local resp
     if ! read -r -t 2 resp < "$RESP_FIFO"; then
         if ! kill -0 "$DAEMON_REAL_PID" 2>/dev/null; then
@@ -367,7 +366,7 @@ cp "$SELFPATH/autounattend.xml" "$WORKDIR/"
 cp "$SELFPATH/firstLogon.ps1" "$WORKDIR/"
 cp "$SELFPATH/secondLogon.ps1" "$WORKDIR/"
 # export env de l HOST vers GUEST via $WORKDIR
-echo "[*] Dtection de la locale hote ..."
+echo "[*] Detection de la locale hote ..."
 HOSTLOC=$(printf '%s\n' "$LANG" | sed 's/\..*//; s/@.*//; s/"//g')
 if [[ -z "$HOSTLOC" || "$HOSTLOC" == "C" ]]; then
     echo "    -> Locale HOST = C . Fallback to en-US"
@@ -376,7 +375,7 @@ else
     GUESTLOC=$(echo "$HOSTLOC" | tr '_' '-')
     echo "    -> Locale hote dtecte : $HOSTLOC  $GUESTLOC"
 fi
-echo "[*] Dtection du clavier hote ..."
+echo "[*] Detection du clavier hote ..."
 if [[ -f /etc/default/keyboard ]]; then
     HOSTKB=$(awk -F= '/XKBLAYOUT/{gsub(/"/,"",$2); print $2}' /etc/default/keyboard)
 elif [[ -f /etc/vconsole.conf ]]; then
@@ -439,14 +438,14 @@ mkfifo "$CMD_FIFO" "$RESP_FIFO"
 chmod 600 "$CMD_FIFO" "$RESP_FIFO"
 start_daemon || { echo "ERROR: daemon startup failed"; cleanup_all; exit 1; }
 # Phase d injections                 
-ISO_WIN="$(ls "$ISOSRCDIR/Win1*.iso" 2>/dev/null | head -n 1 || true)"
+ISO_WIN="$(ls "$ISOSRCDIR"/Win1*.iso 2>/dev/null | head -n 1 || true)"
 if [[ -z "$ISO_WIN" ]]; then
     echo "ERREUR: Aucun ISO Windows trouve (Win1*.iso)"
     exit 1
 fi
 echo "[*] ISO Windows detecte : $ISO_WIN"
-echo "[*] Recherche de lISO VirtIO"
-ISO_VIRTIO="$(ls "$ISOSRCDIR/virtio-wi*.iso" 2>/dev/null | head -n 1 || true)"
+echo "[*] Recherche de l'ISO VirtIO"
+ISO_VIRTIO="$(ls "$ISOSRCDIR"/virtio-wi*.iso 2>/dev/null | head -n 1 || true)"
 if [[ -z "$ISO_VIRTIO" ]]; then
     echo "ERREUR: Aucun ISO VirtIO trouve (virtio-win*.iso)"
     echo "Telecharge-le depuis https://fedorapeople.org/groups/virt/virtio-win/"
@@ -463,6 +462,7 @@ if [[ ! -z $(ls -A "$ISOPTS"/virtio) ]]; then
     echo "ERREUR: $ISOPTS/virtio doit etre vide"
     exit 1
 fi
+exec 3> "$CMD_FIFO" # ouvrir une fois
 d_mount "$ISO_WIN" "$ISOPTS/win" || { 
     echo "ERREUR: montage $ISO_WIN"
     exit 1
@@ -471,7 +471,7 @@ d_mount "$ISO_VIRTIO" "$ISOPTS/virtio" || {
     echo "ERREUR: montage $ISO_VIRTIO"
     exit 1
 }
-echo "  -> ISOs monts avec succes"
+echo "  -> ISOs montes avec succes"
 # Dossier de travail pour l'ISO modifie
 mkdir iso_work
 echo "Generation d'une copie writable de l'ISO win ..."
@@ -559,6 +559,7 @@ fi
 if [[ -d "$ISOPTS/virtio" ]]; then
     d_umount "$ISOPTS/virtio" || echo "WARN: echec du demontage de $ISO_VIRTIO"
 fi
+stop_daemon #we dont need this anymore
 # --- ICI ON DECHARGE LA BOITE A PATCHER LES PATCHS ---
 mv "$WORKDIR"/* iso_work/
 # --- RECONSTRUCTION ISO ---

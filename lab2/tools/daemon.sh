@@ -37,6 +37,7 @@ fi
 log() {
     printf "[%s] %s\n" "$(date '+%F %T')" "$*" >> "$DAEMON_LOG"
 }
+trap 'log "DEBUG: received signal $?"' TERM INT HUP
 # Cleanup on exit
 cleanup() {
     log "Daemon exiting with code $?"
@@ -51,7 +52,13 @@ log "Sending READY with PID $$"
 printf "READY %s\n" "$$" > "$RESP_FIFO"
 # Main loop
 while read -r cmd arg1 arg2; do
-    log "Received command: $cmd $arg1 $arg2"
+    rc=$?
+    log "DEBUG: read() exit code = $rc"
+    printf 'DEBUG: RAW CMD = %q\n' "$cmd" >> "$DAEMON_LOG"
+    printf 'DEBUG: RAW ARG1 = %q\n' "$arg1" >> "$DAEMON_LOG"
+    printf 'DEBUG: RAW ARG2 = %q\n' "$arg2" >> "$DAEMON_LOG"
+    #normalize $cmd
+    cmd="$(printf '%s' "$cmd" | tr -d '\r\n\t ')"
     case "$cmd" in
         mount)
             if mount -o loop,ro "$arg1" "$arg2" 2>/dev/null; then
@@ -83,5 +90,6 @@ while read -r cmd arg1 arg2; do
             ;;
     esac
 done < "$CMD_FIFO"
+log "DEBUG: LOOP EXITED with last cmd='$cmd'"
 log "Daemon stopped"
 exit 0
