@@ -9,6 +9,14 @@ function Afficher-Message {
     Write-Host $Message -ForegroundColor $Couleur
 }
 
+# === GLOBAL INITIALIZATION ===
+$global:dossierMigration = Join-Path $env:USERPROFILE "PiNodeMigration"
+
+if (-not (Test-Path -Path $global:dossierMigration)) {
+    New-Item -ItemType Directory -Path $global:dossierMigration | Out-Null
+}
+# =============================
+
 function Demander-InformationsHote {
     $global:hoteDebian = @{
         AdresseIP = $null
@@ -23,7 +31,7 @@ function Demander-InformationsHote {
     # Instructions pour l'utilisateur
     Afficher-Message "`nÉtapes à suivre sur l'ordinateur Debian :" -Couleur Yellow
     Afficher-Message "1. Ouvrez le Terminal (Ctrl+Alt+T)" -Couleur White
-    Afficher-Message "2. Tapez les commandes suivantes :" -Couleur Whit
+    Afficher-Message "2. Tapez les commandes suivantes :" -Couleur White
     Afficher-Message "   - Pour l'adresse IP : " -Couleur Cyan
     Afficher-Message "     ip addr show" -Couleur Green
     Afficher-Message "   - Pour le nom d'utilisateur :" -Couleur Cyan  
@@ -74,13 +82,6 @@ function Tester-ConnexionSSH {
     }
 }
 function Rechercher-FichierConfiguration {
-    $dossierMigration = Join-Path $env:USERPROFILE "PiNodeMigration"
-
-    # Créer le dossier de migration s'il n'existe pas
-    if (-not (Test-Path -Path $dossierMigration)) {
-        New-Item -ItemType Directory -Path $dossierMigration | Out-Null
-    }
-
     # Modèles de recherche des fichiers de configuration
     $modelesRecherche = @(
         "mainnet.env", 
@@ -100,14 +101,14 @@ function Rechercher-FichierConfiguration {
         "C:\ProgramData\Pi Network"
     )
 
-    $fichiersTraouves = @()
+    $fichiersTrouves = @()
 
     # Recherche des fichiers
     foreach ($emplacement in $emplacementsRecherche) {
         foreach ($modele in $modelesRecherche) {
             try {
                 $resultats = Get-ChildItem -Path $emplacement -Recurse -Filter $modele -ErrorAction Stop
-                $fichiersTraouves += $resultats
+                $fichiersTrouves += $resultats
             } catch {
                 Afficher-Message "Impossible de rechercher dans $emplacement" -Couleur Yellow
             }
@@ -115,8 +116,8 @@ function Rechercher-FichierConfiguration {
     }
 
     # Copier les fichiers trouvés dans le dossier de migration
-    foreach ($fichier in $fichiersTraouves) {
-        $cheminDestination = Join-Path $dossierMigration $fichier.Name
+    foreach ($fichier in $fichiersTrouves) {
+        $cheminDestination = Join-Path $global:dossierMigration $fichier.Name
         try {
             Copy-Item -Path $fichier.FullName -Destination $cheminDestination -Force
             Afficher-Message "Copié : $($fichier.FullName) vers $cheminDestination" -Couleur Green
@@ -125,7 +126,7 @@ function Rechercher-FichierConfiguration {
         }
     }
 
-    return $fichiersTraouves
+    return $fichiersTrouves
 }
 
 function Generer-ScriptPreparationDebian {
@@ -226,18 +227,17 @@ log "Migration du node Pi terminée avec succès"
 "@
 
     # Chemin du script sur le système local
-    $cheminScriptLocal = Join-Path $dossierMigration "preparation_node_pi.sh"
+    $cheminScriptLocal = Join-Path $global:dossierMigration "preparation_node_pi.sh"
     
     # Enregistrer le script
     $scriptContenu | Out-File -FilePath $cheminScriptLocal -Encoding UTF8
-
-    # Rendre le script exécutable
-    & chmod +x $cheminScriptLocal
 
     # Transférer le script via SCP
     try {
         scp $cheminScriptLocal "$Utilisateur@${AdresseIP}:~/preparation_node_pi.sh"
         Afficher-Message "Script transféré avec succès sur l'hôte Debian" -Couleur Green
+        # After SCP
+        ssh "$Utilisateur@$AdresseIP" "chmod +x ~/preparation_node_pi.sh"
     } catch {
         Afficher-Message "Échec du transfert du script" -Couleur Red
     }
@@ -285,6 +285,8 @@ function Test-PiNode {
     Write-Host "=== Tests post-migration ==="
 
     $allOk = $true
+    $sshUser = $global:hoteDebian.Utilisateur
+    $sshTarget = $global:hoteDebian.AdresseIP
 
     # Vérifier que pi-node est accessible
     & ssh "$sshUser@$sshTarget" "pi-node --help" | Out-Null
@@ -292,7 +294,7 @@ function Test-PiNode {
         Write-Host "pi-node est installé et accessible."
     } else {
         Write-Warning "pi-node n'est pas disponible."
-	$allOk = $false
+        $allOk = $false
     }
 
     # Vérifier l'état du conteneur mainnet
@@ -301,7 +303,7 @@ function Test-PiNode {
         Write-Host "Conteneur mainnet trouvé : $dockerStatus"
     } else {
         Write-Warning "Conteneur mainnet introuvable ou arrêté."
-	$allOk = $false
+        $allOk = $false
     }
 
     # Afficher quelques lignes de logs
