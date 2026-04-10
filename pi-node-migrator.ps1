@@ -132,7 +132,7 @@ function Rechercher-FichierConfiguration {
 function Generer-ScriptPreparationDebian {
     param($AdresseIP, $Utilisateur)
 
-    $scriptContenu = @"
+    $scriptContenu = @'
 #!/bin/bash
 
 # Script de Préparation du node Pi Network
@@ -224,7 +224,7 @@ log "Nettoyage des fichiers temporaires"
 rm -rf ~/pi_migration/*
 
 log "Migration du node Pi terminée avec succès"
-"@
+'@
 
     # Chemin du script sur le système local
     $cheminScriptLocal = Join-Path $global:dossierMigration "preparation_node_pi.sh"
